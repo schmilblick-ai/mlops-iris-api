@@ -16,5 +16,8 @@ stop-api:
 start-project:
 	docker compose -p mlops up -d --build
 
+log-project:
+	docker compose -p mlops logs
+	
 stop-project:
 	docker compose -p mlops down
