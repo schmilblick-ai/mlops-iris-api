@@ -2,7 +2,7 @@ links:
 	@echo "Prometheus: http://localhost:9090"
 	@echo "Grafana: http://localhost:3000"
 
-#docker image and instance for the uvicorn server
+#docker image and instance for the uvicorn backend server
 build-api:
 	docker build -t mlops-iris-api -f ./src/api/Dockerfile .
 
@@ -11,3 +11,10 @@ run-api:
 
 stop-api:
 	docker stop iris-api
+
+#docker image for nginx proxy server
+start-project:
+	docker compose -p mlops up -d --build
+
+stop-project:
+	docker compose -p mlops down
