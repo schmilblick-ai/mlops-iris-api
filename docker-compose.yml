@@ -8,6 +8,14 @@ services:
       replicas: 3      
     expose:
       - "8000"
+    healthcheck:
+      #test: ["CMD", "curl", "-f", "http://localhost:8000/health"] Y A PAS CURL DONC ON EVITE
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s      # vérifie toutes les 5s
+      timeout: 3s
+      retries: 5        # considère healthy après 5 succès
+      start_period: 30s # laisse 30s à l'API pour démarrer
+  
   
   nginx:
     build:
@@ -19,7 +27,9 @@ services:
       - "443:443"
     volumes:
       - ./deployments/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./deployments/nginx/certs:/etc/nginx/certs:ro
+      - ./deployments/nginx/certs/nginx.crt:/etc/nginx/certs/nginx.crt:ro
+      - ./deployments/nginx/certs/nginx.key:/etc/nginx/certs/nginx.key:ro      
       - ./deployments/nginx/.htpasswd:/etc/nginx/.htpasswd:ro
     depends_on:
-      - mlops-iris-api
+      mlops-iris-api:
+        condition: service_healthy  # ← attend que l'API soit healthy

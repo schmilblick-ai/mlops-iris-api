@@ -1,6 +1,7 @@
 links:
 	@echo "Prometheus: http://localhost:9090"
 	@echo "Grafana: http://localhost:3000"
+	@echo "Makefile: https://www.gnu.org/software/make/manual/html_node/Overriding.html"
 
 #docker image and instance for the uvicorn backend server
 build-api:
@@ -21,3 +22,9 @@ log-project:
 	
 stop-project:
 	docker compose -p mlops down
+
+rerun:
+	docker system df
+	docker builder prune -f
+	docker system df
+	start-project

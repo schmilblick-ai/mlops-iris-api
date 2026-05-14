@@ -1,6 +1,7 @@
 import os
 import joblib
 import numpy as np
+from fastapi.responses import Response  # ✅ ajout
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -8,19 +9,30 @@ from pydantic import BaseModel
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), 'model.joblib')
 
-# Chargement du modèle entraîné
-try:
-    model = joblib.load(MODEL_PATH)
-except FileNotFoundError:
-    raise RuntimeError(f"Model file not found at {MODEL_PATH}.")
-except Exception as e:
-    raise RuntimeError(f"Error loading model: {e}")
-
 app = FastAPI(
     title="Iris Prediction API",
     description="A simple API to predict Iris species based on sepal and petal measurements.",
     version="1.0.0",
 )
+model = None
+
+@app.on_event("startup")
+def load_model():
+    global model
+    # Chargement du modèle entraîné
+    try:
+        model = joblib.load(MODEL_PATH)
+    except FileNotFoundError:
+        raise RuntimeError(f"Model file not found at {MODEL_PATH}.")
+    except Exception as e:
+        raise RuntimeError(f"Error loading model: {e}")
+
+# ✅ Health check qui vérifie que le modèle est bien chargé
+@app.get("/health")
+def health():
+    if model is None:
+        return Response(status_code=503, content="model not loaded")
+    return {"status": "ok", "model": "loaded"}
 
 # modèle de données pour la requête d'entrée
 class IrisFeatures(BaseModel):
