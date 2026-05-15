@@ -25,6 +25,7 @@ services:
     ports:
       - "8080:80"
       - "443:443"
+      - "8081:8081"   # ✅ port stats interne
     volumes:
       - ./deployments/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./deployments/nginx/certs/nginx.crt:/etc/nginx/certs/nginx.crt:ro
@@ -33,3 +34,43 @@ services:
     depends_on:
       mlops-iris-api:
         condition: service_healthy  # ← attend que l'API soit healthy
+  
+  nginx_exporter:
+    image: nginx/nginx-prometheus-exporter:latest
+    container_name: nginx_exporter
+    ports:
+      - "9113:9113"
+    depends_on:
+      - nginx
+    environment:
+      #SCRAPE_URI: https://nginx_revproxy/nginx_status       #et non pas de https entre les deux machines
+      SCRAPE_URI: http://nginx:8081/nginx_status   # ✅ on passe par le port 8081 pour les stats - séparation des ports
+  
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus_server
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deployments/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      - nginx_exporter
+  
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana_dashboard
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+
+#reviens en colonne 1
+volumes:
+  prometheus_data:
+  grafana_data:
